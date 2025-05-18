@@ -1,5 +1,7 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import middleware.Converter;
+import middleware.Menu;
 import models.CurrencyMap;
 
 import java.io.FileWriter;
@@ -11,19 +13,13 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        Double value = 0.0;
-        System.out.print("Digite código da moeda: ");
-        String currencyID = scanner.nextLine();
+        Menu menu = new Menu();
+        Converter converter = new Converter();
+        menu.main(converter);
 
-        String address = "https://v6.exchangerate-api.com/v6/3ecb8af07f9216332d83b17f/latest/" + currencyID.toUpperCase();
-
-        System.out.print("Digite valor: ");
-        value = scanner.nextDouble();
-        scanner.nextLine();
         try {
             HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(address)).build();
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(converter.getAddress())).build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -36,15 +32,12 @@ public class Main {
                 return;
             }
 
-            System.out.print("Digite código da moeda: ");
-            currencyID = scanner.nextLine();
-
-            Double base_value = (Double) currencyMap.conversion_rates().get(currencyID.toUpperCase());
+            Double base_value = (Double) currencyMap.conversion_rates().get(converter.getSecondCurrencyID());
             if(base_value == null) {
                 base_value = 0.0;
             }
-            value *= base_value;
-            System.out.printf("valor * " + currencyMap.base_code() + "/" + currencyID.toUpperCase() + " = %.2f", value);
+            converter.setValue(converter.getValue() * base_value);
+            System.out.printf("valor * " + converter.getFirstCurrencyID() + "/" + converter.getSecondCurrencyID() + " = %.2f", converter.getValue());
         } catch (Exception exception) {
             System.out.println(exception.toString());
         }
